@@ -248,3 +248,27 @@ def update_product(name, description, company, price, units, product_id):
         return {"status": -1, "message": f"Error de connexió:{e}" }
     finally:
         conn.close()
+
+
+def read_all_products_ordered(orderby):
+    try:
+        conn = db_botiga()
+        cur = conn.cursor()
+        query = """
+        SELECT c.name AS category_name, sc.name AS subcategory_name,
+               p.name AS product_name, p.company AS product_brand,
+               p.price AS product_price
+        FROM product p
+        INNER JOIN subcategory sc ON p.subcategory_id = sc.subcategory_id
+        INNER JOIN category c ON sc.category_id = c.category_id
+        ORDER BY p.name """ + orderby
+        cur.execute(query)
+        products_info = cur.fetchall()
+
+    except Exception as e:
+        return {"status": "error", "message": f"Error de connexió:{e}" }
+    
+    finally:
+        conn.close()
+
+    return products_info
