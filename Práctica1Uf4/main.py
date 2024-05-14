@@ -1,6 +1,6 @@
 from typing import List, Union
 
-from fastapi import FastAPI, HTTPException, File, UploadFile
+from fastapi import FastAPI, HTTPException, File, Query, UploadFile
 import csv
 from pydantic import BaseModel
 
@@ -71,7 +71,7 @@ async def load_products(file: UploadFile = File(...)):
         with open(file.filename, "wb") as buffer:
             buffer.write(file.file.read())
         
-        # Procesar el archivo CSV
+        
         with open(file.filename, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
@@ -83,34 +83,47 @@ async def load_products(file: UploadFile = File(...)):
                 price = float(row['precio'])
                 units = int(row['unidades'])
 
-                # Verificar si la categoría ya existe en la base de datos
+                
                 category_id = db_botiga.check_category_exists(category_name)
                 if category_id is None:
-                    # Si no existe, insertarla
+                    
                     category_id = db_botiga.create_category(category_name)
                 else:
-                    # Si existe, actualizarla
+                    
                     db_botiga.update_category(category_name, category_id)
 
-                # Verificar si la subcategoría ya existe en la base de datos
+                
                 subcategory_id = db_botiga.check_subcategory_exists(subcategory_name, category_id)
                 if subcategory_id is None:
-                    # Si no existe, insertarla
+                    
                     subcategory_id = db_botiga.create_subcategory(subcategory_name, category_id)
                 else:
-                    # Si existe, actualizarla
+                    
                     db_botiga.update_subcategory(subcategory_name, subcategory_id)
 
-                # Verificar si el producto ya existe en la base de datos
+                
                 product_id = db_botiga.check_product_exists(product_name, subcategory_id)
                 if product_id is None:
-                    # Si no existe, insertarlo
+                   
                     db_botiga.create_product(product_name, description, company, price, units, subcategory_id)
                 else:
-                    # Si existe, actualizarlo
+                   
                     db_botiga.update_product(product_name, description, company, price, units, product_id)
 
     except Exception as e:
         return {"status": "error", "message": f"Error de carga: {e}" }
 
     return {"status": "success", "message": "Carga masiva completada con éxito"}
+
+
+@app.get("/productOrderBy")
+def read_products_ordered(orderby: str = Query(..., description="Ordenar por 'asc' o 'desc'")):
+    
+    if orderby.lower() not in ['asc', 'desc']:
+        return {"status": "error", "message": "El parámetro 'orderby' debe ser 'asc' o 'desc'"}
+
+    
+    products_info = db_botiga.read_all_products_ordered(orderby.lower())
+
+   
+    return {"status": "success", "products": products_info}

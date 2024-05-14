@@ -6,7 +6,8 @@ def product_schema(product) -> dict:
             "description": product[2],
             "company": product[3],
             "price": product[4],
-            "units": product[5]
+            "units": product[5],
+            "subcategory_id": product[6],
             }
 
 def products_schema(products) -> dict:
